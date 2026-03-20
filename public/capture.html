@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Manager - Quick Capture</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:#0F1923; color:#E8F0F8; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .capture-card { background:#1A2535; border:1px solid #2A3A4A; border-radius:16px; padding:30px; width:100%; max-width:520px; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+    .capture-card h1 { font-size:20px; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+    .capture-card .subtitle { font-size:12px; color:#5A7A8A; margin-bottom:20px; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#5A7A8A; margin-bottom:5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:10px 12px; background:#243044; border:1px solid #2A3A4A; border-radius:8px; color:#E8F0F8; font-size:14px; font-family:inherit; outline:none; transition:border 0.2s;
+    }
+    .form-group input:focus, .form-group textarea:focus { border-color:#2980B9; box-shadow:0 0 0 3px rgba(41,128,185,0.2); }
+    .form-group textarea { min-height:70px; resize:vertical; }
+    .meta-bar { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+    .meta-tag { background:#243044; border:1px solid #2A3A4A; border-radius:6px; padding:6px 10px; font-size:11px; color:#8AABB8; display:flex; align-items:center; gap:5px; }
+    .paste-zone {
+      border:2px dashed #2A3A4A; border-radius:10px; padding:20px; text-align:center; color:#5A7A8A; font-size:13px; cursor:pointer; transition:all 0.2s; margin-bottom:14px; min-height:80px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;
+    }
+    .paste-zone:hover, .paste-zone.active { border-color:#2980B9; background:rgba(41,128,185,0.05); }
+    .paste-zone img { max-width:100%; max-height:200px; border-radius:6px; margin-top:8px; }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:12px 24px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; border:none; transition:all 0.2s; width:100%; justify-content:center; }
+    .btn-primary { background:#2980B9; color:#fff; }
+    .btn-primary:hover { background:#2471A3; transform:translateY(-1px); }
+    .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+    .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#27AE60; color:#fff; padding:12px 24px; border-radius:8px; font-size:14px; font-weight:500; display:none; z-index:999; animation:fadeIn 0.3s; }
+    .toast.error { background:#E74C3C; }
+    @keyframes fadeIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+    .setup-card { text-align:center; padding:40px; }
+    .setup-card input { margin-top:10px; }
+  </style>
+</head>
+<body>
+  <div class="capture-card" id="mainCard">
+    <div id="setupView" style="display:none;">
+      <div class="setup-card">
+        <h1>🔧 Configurar Quick Capture</h1>
+        <p style="color:#5A7A8A; font-size:13px; margin:10px 0;">Cole o Bearer Token gerado na aba Integrações do QA Manager.</p>
+        <div class="form-group">
+          <label>URL do QA Manager</label>
+          <input type="text" id="setupUrl" placeholder="http://localhost:3000" />
+        </div>
+        <div class="form-group">
+          <label>Bearer Token</label>
+          <input type="text" id="setupToken" placeholder="qa_..." />
+        </div>
+        <button class="btn btn-primary" id="btnSetup" style="margin-top:10px;">Salvar e Conectar</button>
+      </div>
+    </div>
+
+    <div id="captureView" style="display:none;">
+      <h1>📸 Quick Capture</h1>
+      <p class="subtitle">Reporte rápido de bugs — cole screenshots com Ctrl+V</p>
+
+      <div class="meta-bar" id="metaBar"></div>
+
+      <div class="form-group">
+        <label>Título do Bug *</label>
+        <input type="text" id="capTitle" placeholder="Ex: Botão de login não funciona no Safari" />
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <textarea id="capDesc" placeholder="Detalhes do problema encontrado..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Severidade</label>
+        <select id="capSeverity">
+          <option value="low">Baixa</option>
+          <option value="medium" selected>Média</option>
+          <option value="high">Alta</option>
+          <option value="critical">Crítica</option>
+        </select>
+      </div>
+
+      <div class="paste-zone" id="pasteZone">
+        <span style="font-size:28px;">📋</span>
+        <span>Cole uma screenshot aqui (Ctrl+V) ou clique para selecionar...</span>
+        <input type="file" id="fileInput" accept="image/*" style="display:none;" />
+      </div>
+
+      <button class="btn btn-primary" id="btnSend">🚀 Enviar Bug Report</button>
+      <p style="text-align:center; margin-top:12px; font-size:11px; color:#5A7A8A; cursor:pointer;" id="btnReset">⚙️ Reconfigurar</p>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let screenshotBase64 = '';
+
+    function showToast(msg, isError) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (isError ? ' error' : '');
+      t.style.display = 'block';
+      setTimeout(() => t.style.display = 'none', 3500);
+    }
+
+    function getConfig() {
+      try { return JSON.parse(localStorage.getItem('qm_capture_config')); } catch(e) { return null; }
+    }
+
+    function init() {
+      const config = getConfig();
+      if (!config) {
+        $('setupView').style.display = 'block';
+        $('captureView').style.display = 'none';
+      } else {
+        $('setupView').style.display = 'none';
+        $('captureView').style.display = 'block';
+        loadMeta();
+      }
+    }
+
+    function loadMeta() {
+      const bar = $('metaBar');
+      const ua = navigator.userAgent;
+      let browser = 'Desconhecido';
+      if (ua.includes('Firefox')) browser = 'Firefox';
+      else if (ua.includes('Edg')) browser = 'Edge';
+      else if (ua.includes('Chrome')) browser = 'Chrome';
+      else if (ua.includes('Safari')) browser = 'Safari';
+
+      let os = 'Desconhecido';
+      if (ua.includes('Windows')) os = 'Windows';
+      else if (ua.includes('Mac')) os = 'macOS';
+      else if (ua.includes('Linux')) os = 'Linux';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('iPhone')) os = 'iOS';
+
+      const params = new URLSearchParams(window.location.search);
+      const pageUrl = params.get('url') || '(sem URL)';
+
+      bar.innerHTML = `
+        <div class="meta-tag">🌐 ${browser}</div>
+        <div class="meta-tag">💻 ${os}</div>
+        <div class="meta-tag" title="${pageUrl}">📄 ${pageUrl.length > 40 ? pageUrl.substring(0,40) + '...' : pageUrl}</div>
+      `;
+      bar.dataset.browser = browser;
+      bar.dataset.os = os;
+      bar.dataset.url = pageUrl;
+    }
+
+    // Setup
+    $('btnSetup').addEventListener('click', () => {
+      const url = $('setupUrl').value.trim();
+      const token = $('setupToken').value.trim();
+      if (!url || !token) return showToast('Preencha ambos os campos', true);
+      localStorage.setItem('qm_capture_config', JSON.stringify({ url, token }));
+      showToast('Configuração salva!');
+      init();
+    });
+
+    $('btnReset').addEventListener('click', () => {
+      localStorage.removeItem('qm_capture_config');
+      init();
+    });
+
+    // Paste screenshot
+    document.addEventListener('paste', (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          readFile(file);
+          break;
+        }
+      }
+    });
+
+    $('pasteZone').addEventListener('click', () => $('fileInput').click());
+    $('fileInput').addEventListener('change', (e) => {
+      if (e.target.files[0]) readFile(e.target.files[0]);
+    });
+
+    function readFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        screenshotBase64 = e.target.result;
+        $('pasteZone').innerHTML = `<img src="${screenshotBase64}" alt="Screenshot" /><span style="font-size:11px; color:#27AE60; margin-top:5px;">✅ Screenshot capturada!</span>`;
+        $('pasteZone').classList.add('active');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Send
+    $('btnSend').addEventListener('click', async () => {
+      const config = getConfig();
+      if (!config) return showToast('Configure primeiro!', true);
+
+      const title = $('capTitle').value.trim();
+      if (!title) return showToast('Título é obrigatório!', true);
+
+      const bar = $('metaBar');
+      const payload = {
+        title,
+        description: $('capDesc').value.trim(),
+        severity: $('capSeverity').value,
+        page_url: bar.dataset.url || '',
+        browser: bar.dataset.browser || '',
+        os: bar.dataset.os || '',
+        screenshot_base64: screenshotBase64 || ''
+      };
+
+      $('btnSend').disabled = true;
+      $('btnSend').textContent = 'Enviando...';
+
+      try {
+        const resp = await fetch(config.url.replace(/\/$/, '') + '/api/quick-capture', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + config.token, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Erro ao enviar');
+        showToast('Bug reportado com sucesso! 🎉');
+        $('capTitle').value = '';
+        $('capDesc').value = '';
+        screenshotBase64 = '';
+        $('pasteZone').innerHTML = '<span style="font-size:28px;">📋</span><span>Cole uma screenshot aqui (Ctrl+V) ou clique para selecionar...</span>';
+        $('pasteZone').classList.remove('active');
+      } catch(e) {
+        showToast(e.message, true);
+      }
+
+      $('btnSend').disabled = false;
+      $('btnSend').textContent = '🚀 Enviar Bug Report';
+    });
+
+    init();
+  </script>
+</body>
+</html>

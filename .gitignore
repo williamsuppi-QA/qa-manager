@@ -1,0 +1,10 @@
+node_modules/
+data/
+.env
+*.log
+.DS_Store
+Thumbs.db
+
+# Uploads (mantem a pasta, ignora arquivos)
+public/uploads/*
+!public/uploads/.gitkeep

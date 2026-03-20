@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QA Manager — Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #2980b9, #3498db);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 28px;
+    }
+
+    .logo h1 {
+      color: #fff;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .logo p {
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 15px;
+      transition: all 0.3s;
+      outline: none;
+    }
+
+    input::placeholder { color: rgba(255,255,255,0.3); }
+
+    input:focus {
+      border-color: #3498db;
+      background: rgba(52,152,219,0.1);
+      box-shadow: 0 0 0 3px rgba(52,152,219,0.15);
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #2980b9, #3498db);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 8px;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(52,152,219,0.4);
+    }
+
+    .btn-login:active { transform: translateY(0); }
+
+    .btn-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error-msg {
+      background: rgba(231,76,60,0.15);
+      border: 1px solid rgba(231,76,60,0.4);
+      color: #e74c3c;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .error-msg.show { display: block; }
+
+    .footer-text {
+      text-align: center;
+      color: rgba(255,255,255,0.3);
+      font-size: 12px;
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">
+      <div class="logo-icon">🧪</div>
+      <h1>QA Manager</h1>
+      <p>Sistema de Gerenciamento de Qualidade</p>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Usuário</label>
+        <input
+          type="text"
+          id="email"
+          placeholder="Digite seu usuário"
+          autocomplete="username"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Senha</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Digite sua senha"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn-login" id="btnLogin">
+        Entrar
+      </button>
+    </form>
+
+    <div class="login-link" style="text-align: center; margin-top: 24px; color: rgba(255,255,255,0.4); font-size: 13px;">
+      Não tem conta? <a href="/register.html" style="color: #3498db; text-decoration: none; font-weight: 500;">Criar conta</a>
+    </div>
+
+    <div class="footer-text">QA Manager &copy; 2024</div>
+  </div>
+
+  <script>
+    // Se já estiver logado, redireciona
+    if (localStorage.getItem('qa_token')) {
+      window.location.href = '/';
+    }
+
+    const form    = document.getElementById('loginForm');
+    const btnLogin = document.getElementById('btnLogin');
+    const errorMsg = document.getElementById('errorMsg');
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.classList.add('show');
+    }
+
+    function hideError() {
+      errorMsg.classList.remove('show');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        showError('Preencha todos os campos.');
+        return;
+      }
+
+      btnLogin.disabled    = true;
+      btnLogin.textContent = 'Entrando...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || 'Erro ao fazer login.');
+          return;
+        }
+
+        localStorage.setItem('qa_token', data.token);
+        localStorage.setItem('qa_user', JSON.stringify(data.user));
+        window.location.href = '/';
+
+      } catch (err) {
+        showError('Erro de conexão. Tente novamente.');
+      } finally {
+        btnLogin.disabled    = false;
+        btnLogin.textContent = 'Entrar';
+      }
+    });
+  </script>
+</body>
+</html>

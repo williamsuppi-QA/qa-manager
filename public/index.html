@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QA Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+  <div class="app-wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">🧪</span>
+          <span class="logo-text">QA Manager</span>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+
+        <div class="nav-section-label">Fluxo de Trabalho</div>
+        <a href="#" class="nav-item" data-page="test-cases">
+          <span class="nav-icon">✅</span>
+          <span class="nav-label">Casos de Teste</span>
+        </a>
+        <a href="#" class="nav-item" data-page="test-plans">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Planos de Teste</span>
+        </a>
+        <a href="#" class="nav-item" data-page="test-runs">
+          <span class="nav-icon">▶️</span>
+          <span class="nav-label">Execuções</span>
+        </a>
+        <a href="#" class="nav-item" data-page="bug-reports">
+          <span class="nav-icon">🐛</span>
+          <span class="nav-label">Bug Reports</span>
+        </a>
+        <a href="#" class="nav-item" data-page="traceability">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Rastreabilidade</span>
+        </a>
+
+        <div class="nav-section-label">Ferramentas</div>
+        <a href="#" class="nav-item" data-page="library">
+          <span class="nav-icon">📚</span>
+          <span class="nav-label">Biblioteca</span>
+        </a>
+        <a href="#" class="nav-item" data-page="scripts">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Scripts</span>
+        </a>
+        <a href="#" class="nav-item" data-page="integrations">
+          <span class="nav-icon">🔗</span>
+          <span class="nav-label">Integrações</span>
+        </a>
+        <a href="#" class="nav-item" data-page="exports">
+          <span class="nav-icon">📤</span>
+          <span class="nav-label">Exportar</span>
+        </a>
+
+        <div class="nav-section-label">Aprender</div>
+        <a href="#" class="nav-item" data-page="tutorial">
+          <span class="nav-icon">📖</span>
+          <span class="nav-label">Tutorial</span>
+        </a>
+        <a href="#" class="nav-item" data-page="qa-guide">
+          <span class="nav-icon">🎓</span>
+          <span class="nav-label">Guia QA Jr</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span>QA Manager v1.0</span>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content" id="mainContent">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-btn" id="menuBtn">&#9776;</button>
+          <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="project-selector" style="display:flex; align-items:center; margin-right: 15px;">
+            <select id="globalProjectSelect" class="form-control" style="width:160px; padding: 4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-color); font-size:13px;"></select>
+            <button id="btnNewProject" class="btn btn-secondary btn-sm" style="margin-left:5px; padding: 4px 10px; font-weight:bold;" title="Novo Projeto">+</button>
+          </div>
+          <div class="search-box">
+            <input type="text" id="globalSearch" placeholder="Buscar..." autocomplete="off" />
+            <span class="search-icon">🔍</span>
+          </div>
+          <div class="theme-toggle" id="themeToggle" title="Alternar tema">🌙</div>
+        </div>
+      </header>
+
+      <div class="page-content" id="pageContent"></div>
+    </main>
+  </div>
+
+  <!-- MODAL GLOBAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Modal</h2>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- CONFIRM DIALOG -->
+  <div class="modal-overlay" id="confirmOverlay">
+    <div class="modal confirm-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">⚠️ Confirmar</h2>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage">Tem certeza?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
+        <button class="btn btn-danger"    id="confirmOk">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/gherkinEditor.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/testCases.js"></script>
+  <script src="/js/bugReports.js"></script>
+  <script src="/js/testPlans.js"></script>
+  <script src="/js/testRuns.js"></script>
+  <script src="/js/scripts.js"></script>
+  <script src="/js/integrations.js"></script>
+  <script src="/js/traceability.js"></script>
+  <script src="/js/library.js"></script>
+  <script src="/js/exports.js"></script>
+  <script src="/js/tutorial.js"></script>
+  <script src="/js/qaGuide.js"></script>
+  <script src="/js/shortcuts.js"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/auth.js"></script>
+</body>
+</html>
